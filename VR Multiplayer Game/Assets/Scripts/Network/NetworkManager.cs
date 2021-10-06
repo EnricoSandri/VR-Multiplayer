@@ -4,35 +4,60 @@ using UnityEngine;
 using Photon.Pun;
 using Photon.Realtime;
 
+[System.Serializable]
+public class DefaultRoom
+{
+    public string Name;
+    public int sceneIndex;
+    public int maxPlayers;
+}
+
+
 public class NetworkManager : MonoBehaviourPunCallbacks
 {
-    // Start is called before the first frame update
-    void Start()
-    {
-        ConnectToServer();
-    } 
+    public List<DefaultRoom> defaultRooms;
+    public GameObject roomUi;
     
     // connect to the photon server using the settings on the PhotonServerSettings file
-    private void ConnectToServer()
+    public void ConnectToServer()
     {
         PhotonNetwork.ConnectUsingSettings();
         Debug.Log("Trying to connect to server...");
     }
 
-    // Check if you are connected to the SERVER, when you are connected, create/join a room.
+    // Check if you are connected to the SERVER, 
     public override void OnConnectedToMaster()
     {
         Debug.Log("Connected to sever");
         base.OnConnectedToMaster();
+        PhotonNetwork.JoinLobby();
+    }
+    
+    public override void OnJoinedLobby()
+    {
+        base.OnJoinedLobby();
+        Debug.Log("We joined the lobby!");
+        roomUi.SetActive(true);
+    }
+
+    // when you are connected, create/join a room.
+    public void InitialiseRoom(int defaultRoomIndex)
+    {
+        // Get the reference of the index of the default room chosen by the player
+        DefaultRoom roomsettings = defaultRooms[defaultRoomIndex];
         
-        // create/join a room
+        //Load scene
+        PhotonNetwork.LoadLevel(roomsettings.sceneIndex);
+        
+        //Create the room and apply the above roomsettings.
         // Room settings:
         RoomOptions roomOptions = new RoomOptions();
-        roomOptions.MaxPlayers = 10;
+        roomOptions.MaxPlayers = (byte)roomsettings.maxPlayers;
         roomOptions.IsVisible = true;
         roomOptions.IsOpen = true;
-        // create the room and apply the room settings
-        PhotonNetwork.JoinOrCreateRoom("Room 1", roomOptions, TypedLobby.Default);
+        
+        // Join.
+        PhotonNetwork.JoinOrCreateRoom(roomsettings.Name, roomOptions, TypedLobby.Default);
     }
     
     //check if you are connected to the ROOM 
