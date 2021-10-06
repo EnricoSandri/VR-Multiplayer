@@ -3,22 +3,34 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.XR;
+using UnityEngine.XR.Interaction.Toolkit;
 using Photon.Pun;
 
-// This class applies the current positions of the body parts of the player avatar to the network player.
+// This class applies the current positions of the Rig to the avatar of the network player.
 //additionally, it hides the network player instance to the player in control, this to avoid to see double avatar
 public class NetworkPlayer : MonoBehaviour
 {
    private PhotonView photonView;
    
-   // set the networkplayer features 
+   // set the network Player features 
    public Transform head;
    public Transform leftHand;
    public Transform rightHand;
+   
+   //Rig reference
+   private Transform headRig;
+   private Transform leftHandRig;
+   private Transform rightHandRig;
 
    private void Start()
    {
       photonView = GetComponent<PhotonView>();
+      
+      //Find the rig of the avatar.
+      XRRig rig = FindObjectOfType<XRRig>();
+      headRig = rig.transform.Find("Camera Offset/Main Camera");
+      leftHandRig = rig.transform.Find("Camera Offset/LeftHand Controller");
+      rightHandRig = rig.transform.Find("Camera Offset/RightHand Controller");
    }
 
    private void Update()
@@ -32,21 +44,16 @@ public class NetworkPlayer : MonoBehaviour
          rightHand.gameObject.SetActive(false);
          
          // map each transform 
-         mapNetworkPlayerPosition(head,XRNode.Head);
-         mapNetworkPlayerPosition(leftHand,XRNode.LeftHand);
-         mapNetworkPlayerPosition(rightHand,XRNode.RightHand);
+         MapNetworkPlayerPosition(head,headRig);
+         MapNetworkPlayerPosition(leftHand,leftHandRig);
+         MapNetworkPlayerPosition(rightHand,rightHandRig);
       }
    }
 
-   // get the inputs from the XR devices and apply it to the network player
-   void mapNetworkPlayerPosition(Transform target, XRNode node)
+   // Apply the transform of the rig to the avatar
+   void MapNetworkPlayerPosition(Transform target, Transform rigTransform)
    {
-      // position values
-      InputDevices.GetDeviceAtXRNode(node).TryGetFeatureValue(CommonUsages.devicePosition, out Vector3 position);
-      // rotation values
-      InputDevices.GetDeviceAtXRNode(node).TryGetFeatureValue(CommonUsages.deviceRotation, out Quaternion rotation);
-      // apply the above values to the target.
-      target.position = position;
-      target.rotation = rotation;
+      target.position = rigTransform.position;
+      target.rotation = rigTransform.rotation;
    }
 }
